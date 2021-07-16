@@ -5,22 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'home.dart';
 
-void main(){
-  runApp(
-    MaterialApp(
-      title: 'Eng4U',
-      // Start the app with the "/" named route. In this case, the app starts
-      // on the FirstScreen widget.
-      initialRoute: '/',
-      routes: {
-
-        // When navigating to the "/second" route, build the SecondScreen widget.
-        '/home': (context) => HomeApp(),
-      },
-    ),
-  );
-}
-
 class ErrorApp extends StatefulWidget {
   const ErrorApp({Key? key}) : super(key: key);
 
@@ -38,12 +22,8 @@ class _ErrorAppState extends State<ErrorApp> {
     try {
       final result = await InternetAddress.lookup('raw.githubusercontent.com');
       if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
-        setState(() {
-          _isLoading=false;
-          _tryText="အင်တာနက်ဆက်သွယ်မှုများပြတ်တောက်နေပါသည်";
-          _secondText="Need internet connection for first time user";
-        });
-        Navigator.pushNamed(context, '/home');
+
+        Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context)=> HomeApp()));
       }
     } on SocketException catch (_) {
       Timer(Duration(seconds: 3), (){
@@ -53,6 +33,7 @@ class _ErrorAppState extends State<ErrorApp> {
           _secondText="Need internet connection for first time user";
 
         });
+       // Navigator.pushNamed(context, '/error');
       });
 
       //Navigator.pushNamed(context, '/error');

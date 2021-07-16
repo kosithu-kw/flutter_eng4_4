@@ -95,7 +95,7 @@ class _AppState extends State<MainApp> {
   @override
   void initState() {
     // TODO: implement initState
-    startTime();
+    Timer(Duration(seconds: 3), () => startTime());
 
     super.initState();
   }
