@@ -2,10 +2,11 @@ import 'dart:convert';
 
 import 'package:eng_for_you/search.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:share/share.dart';
 import 'search.dart';
 import 'error.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:http/http.dart';
 
 
 
@@ -25,8 +26,9 @@ class _HomeAppState extends State<HomeApp> {
   final String _subTitle="သင့်အတွက်အင်္ဂလိပ်စာ";
 
   _fetchData() async{
-    var result=await http.get(Uri.https("raw.githubusercontent.com", "kosithu-kw/eng4u_data/master/list.json"));
-    var jsonData=jsonDecode(result.body);
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/list.json");
+    var file=await result.readAsString();
+    var jsonData=jsonDecode(file);
     return jsonData;
   }
 
@@ -68,6 +70,13 @@ class _HomeAppState extends State<HomeApp> {
                   leading: Icon(Icons.share),
                   onTap: (){
                     Share.share("https://play.google.com/store/apps/details?id=com.goldenmawlamyine.eng_for_you");
+                  },
+                ),
+                ListTile(
+                  title: Text("Read Me"),
+                  leading: Icon(Icons.read_more),
+                  onTap: (){
+                    Navigator.of(context).pushNamed('/readme');
                   },
                 )
               ],

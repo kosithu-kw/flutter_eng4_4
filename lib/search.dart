@@ -4,9 +4,11 @@ import 'dart:io';
 
 import 'package:flappy_search_bar/flappy_search_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'error.dart';
-
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'ad_helper.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:http/http.dart';
 
 
 class SearchApp extends StatefulWidget {
@@ -18,6 +20,39 @@ class SearchApp extends StatefulWidget {
 
 class _SearchAppState extends State<SearchApp> {
   @override
+
+  // TODO: Add _interstitialAd
+  InterstitialAd? _interstitialAd;
+
+  // TODO: Add _isInterstitialAdReady
+  bool _isInterstitialAdReady = false;
+
+  // TODO: Implement _loadInterstitialAd()
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: AdHelper.interstitialAdUnitId,
+      request: AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          this._interstitialAd = ad;
+
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              Navigator.pop(context);
+            },
+          );
+
+          _isInterstitialAdReady = true;
+        },
+        onAdFailedToLoad: (err) {
+          print('Failed to load an interstitial ad: ${err.message}');
+          _isInterstitialAdReady = false;
+        },
+      ),
+    );
+  }
+
+
 
   checkConnection() async{
     try {
@@ -32,8 +67,9 @@ class _SearchAppState extends State<SearchApp> {
 
 
   Future<List<Word>> _getALlWord(String text) async {
-    var res=await http.get(Uri.https('raw.githubusercontent.com', "kosithu-kw/eng4u_data/master/list.json"));
-    var jsonData=jsonDecode(res.body);
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/list.json");
+    var file=await result.readAsString();
+    var jsonData=jsonDecode(file);
 
     List<Word> words = [];
 
@@ -49,7 +85,17 @@ class _SearchAppState extends State<SearchApp> {
   @override
   void initState() {
     // TODO: implement initState
-    Timer(Duration(seconds: 3), () => checkConnection());
+    //Timer(Duration(seconds: 3), () => checkConnection());
+    if (!_isInterstitialAdReady) {
+      _loadInterstitialAd();
+    }
+  }
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _interstitialAd?.dispose();
+
+    super.dispose();
   }
 
   final String _title="English - မြန်မာစာ";
@@ -66,7 +112,12 @@ class _SearchAppState extends State<SearchApp> {
               centerTitle: true,
               leading: IconButton(
                 onPressed: (){
-                  Navigator.pop(context);
+                  if (_isInterstitialAdReady) {
+                    _interstitialAd?.show();
+                  } else {
+                    Navigator.pop(context);
+                  }
+
                 },
                 icon: Icon(Icons.arrow_back),
               ),
@@ -86,8 +137,12 @@ class _SearchAppState extends State<SearchApp> {
                     child: Text("ရှာဖွေနေသည်..."),
                   ),
                   minimumChars: 1,
-                  emptyWidget: Center(
-                    child: Text("သင်ရှာသောအစားအစာနာမည်မတွေ့ရှိပါ"),
+
+                  emptyWidget: Container(
+                    padding: EdgeInsets.all(10),
+                   child: Center(
+                      child: Text("သင်ရှာသောစာလုံးပေါင်းမရှိသေးပါ၊ မကြာမီတွင် Server ဘက်မှစာလုံးပေါင်းအသစ်များ Update ပြုလုပ်ပေးပါမည်။"),
+                    ),
                   ),
                   hintText: "ရှာဖွေရန်",
                   onItemFound: (Word word, int i){
