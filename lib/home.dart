@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'dart:async';
 import 'package:eng_for_you/search.dart';
 import 'package:flutter/material.dart';
 import 'package:share/share.dart';
@@ -32,6 +32,22 @@ class _HomeAppState extends State<HomeApp> {
     return jsonData;
   }
 
+  bool _isUpdate=false;
+
+  _updateData() async{
+    await DefaultCacheManager().emptyCache().then((value){
+      setState(() {
+        _isUpdate=true;
+
+      });
+      Timer(Duration(seconds: 3), () {
+        setState(() {
+          _isUpdate=false;
+        });
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -45,6 +61,11 @@ class _HomeAppState extends State<HomeApp> {
               preferredSize: Size.fromHeight(20),
             ),
             actions: [
+              IconButton(onPressed: (){
+                _updateData();
+              },
+                icon: Icon(Icons.cloud_download),
+              ),
               IconButton(
                   onPressed: (){
                     Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext)=>new SearchApp()));
@@ -84,8 +105,28 @@ class _HomeAppState extends State<HomeApp> {
           ),
           body: Container(
             child: FutureBuilder(
-              future: _fetchData(),
+              future: _isUpdate ? _fetchData() : _fetchData(),
               builder: (context, AsyncSnapshot s){
+
+                if(_isUpdate)
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+
+                      children: [
+                        Container(
+                          padding: EdgeInsets.only(left: 120, right: 120),
+                          child: LinearProgressIndicator(),
+                        ),
+                        Container(
+                          padding: EdgeInsets.only(top: 20),
+                          child: Text("Updating data from server..."),
+                        )
+                      ],
+                    ),
+                  );
+
+
                 if(s.hasData){
 
                   return ListView.builder(
