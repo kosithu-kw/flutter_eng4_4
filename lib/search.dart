@@ -6,9 +6,11 @@ import 'package:flappy_search_bar/flappy_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'error.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'ad_helper.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
+
+import 'home.dart';
 
 
 class SearchApp extends StatefulWidget {
@@ -21,6 +23,29 @@ class SearchApp extends StatefulWidget {
 class _SearchAppState extends State<SearchApp> {
   @override
 
+  String InterstitialId="";
+  bool showInter=false;
+
+  _getAdId() async{
+    var result=await http.get(Uri.https("raw.githubusercontent.com", "kosithu-kw/eng4u_data/master/ads.json"));
+    var jsonData=await jsonDecode(result.body);
+    //print(jsonData['int']);
+
+    setState(() {
+      InterstitialId=jsonData['int'];
+      if(jsonData['showInter']=="true"){
+        setState(() {
+          showInter=true;
+        });
+      }else{
+        setState(() {
+          showInter=false;
+        });
+      }
+    });
+  }
+
+
   // TODO: Add _interstitialAd
   InterstitialAd? _interstitialAd;
 
@@ -30,7 +55,7 @@ class _SearchAppState extends State<SearchApp> {
   // TODO: Implement _loadInterstitialAd()
   void _loadInterstitialAd() {
     InterstitialAd.load(
-      adUnitId: AdHelper.interstitialAdUnitId,
+      adUnitId: InterstitialId,
       request: AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
@@ -38,7 +63,7 @@ class _SearchAppState extends State<SearchApp> {
 
           ad.fullScreenContentCallback = FullScreenContentCallback(
             onAdDismissedFullScreenContent: (ad) {
-              Navigator.pop(context);
+              Navigator.push(context, PageTransition(type: PageTransitionType.rightToLeft, child: HomeApp()));
             },
           );
 
@@ -84,11 +109,16 @@ class _SearchAppState extends State<SearchApp> {
 
   @override
   void initState() {
+    _getAdId();
     // TODO: implement initState
-    //Timer(Duration(seconds: 3), () => checkConnection());
-    if (!_isInterstitialAdReady) {
-      //_loadInterstitialAd();
-    }
+    Timer(Duration(seconds: 3), (){
+      if(showInter){
+        if(!_isInterstitialAdReady){
+          _loadInterstitialAd();
+        }
+      }
+    });
+
   }
   @override
   void dispose() {
@@ -99,28 +129,22 @@ class _SearchAppState extends State<SearchApp> {
   }
 
   final String _title="English - မြန်မာစာ";
-  final String _subTitle="ဖြင့်ရှာဖွေရန်";
+  final String _subTitle="နှစ်ခုလုံးဖြင့်ရှာနိုင်သည်";
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return WillPopScope(
+      onWillPop: ()async{
+        return await Navigator.push(context, PageTransition(type: PageTransitionType.rightToLeft, child: HomeApp()));
+      },
+     child: MaterialApp(
         routes: {
           '/error' : (context) => ErrorApp(),
         },
         home: Scaffold(
             appBar: AppBar(
               centerTitle: true,
-              leading: IconButton(
-                onPressed: (){
-                  if (_isInterstitialAdReady) {
-                   // _interstitialAd?.show();
-                  } else {
-                    Navigator.pop(context);
-                  }
 
-                },
-                icon: Icon(Icons.arrow_back),
-              ),
               title: Text(_title),
               bottom: PreferredSize(
                 child: Text(_subTitle, style: TextStyle( color: Colors.white70),),
@@ -128,13 +152,24 @@ class _SearchAppState extends State<SearchApp> {
               ),
 
             ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: (){
+                if(showInter && _isInterstitialAdReady){
+                  _interstitialAd?.show();
+                }else{
+                  Navigator.push(context, PageTransition(type: PageTransitionType.rightToLeft, child: HomeApp()));
+                }
+              },
+              child: Icon(Icons.home),
+            ),
+
             body: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+                padding: const EdgeInsets.only(left: 10, right: 10, top: 10),
                 child: SearchBar(
                   onSearch:(t)=> _getALlWord(t),
                   loader: Center(
-                    child: Text("ရှာဖွေနေသည်..."),
+                    child: Text("ရှာနေသည်..."),
                   ),
                   minimumChars: 1,
 
@@ -144,7 +179,7 @@ class _SearchAppState extends State<SearchApp> {
                       child: Text("သင်ရှာသောစာလုံးပေါင်းမရှိသေးပါ၊ မကြာမီတွင် Server ဘက်မှစာလုံးပေါင်းအသစ်များ Update ပြုလုပ်ပေးပါမည်။"),
                     ),
                   ),
-                  hintText: "ရှာဖွေရန်",
+                  hintText: "ရှာမည်",
                   onItemFound: (Word word, int i){
                     return Container(
                         child: Card(
@@ -173,6 +208,7 @@ class _SearchAppState extends State<SearchApp> {
               ),
             )
         )
+     )
     );
   }
 }

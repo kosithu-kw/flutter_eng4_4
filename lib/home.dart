@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
+import 'package:eng_for_you/readme.dart';
 import 'package:eng_for_you/search.dart';
 import 'package:flutter/material.dart';
 import 'package:share/share.dart';
 import 'search.dart';
 import 'error.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:http/http.dart';
-
+import 'package:page_transition/page_transition.dart';
 
 
 void main(){
@@ -50,7 +51,11 @@ class _HomeAppState extends State<HomeApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return WillPopScope(
+      onWillPop: () async{
+        return await exit(0);
+      },
+     child: MaterialApp(
         title: _title,
         home: Scaffold(
           appBar: AppBar(
@@ -68,9 +73,8 @@ class _HomeAppState extends State<HomeApp> {
               ),
               IconButton(
                   onPressed: (){
-                    Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext)=>new SearchApp()));
-
-                  },
+                    Navigator.push(context, PageTransition(type: PageTransitionType.leftToRight, child: SearchApp()));
+                    },
                   icon: Icon(Icons.search_outlined)
               )
             ],
@@ -82,10 +86,9 @@ class _HomeAppState extends State<HomeApp> {
                   title: Text("App Version"),
                   subtitle: Text("1.0.0"),
                   leading: Icon(Icons.settings_accessibility),
-                  onTap: (){
-                    Navigator.of(context).pushNamed("/home");
-                  },
+
                 ),
+                /*
                 ListTile(
                   title: Text("Share App"),
                   leading: Icon(Icons.share),
@@ -93,11 +96,13 @@ class _HomeAppState extends State<HomeApp> {
                     Share.share("https://play.google.com/store/apps/details?id=com.goldenmawlamyine.eng_for_you");
                   },
                 ),
+
+                 */
                 ListTile(
                   title: Text("Read Me"),
                   leading: Icon(Icons.read_more),
                   onTap: (){
-                    Navigator.of(context).pushNamed('/readme');
+                    Navigator.push(context, PageTransition(type: PageTransitionType.leftToRight, child: ReadmeApp()));
                   },
                 )
               ],
@@ -178,6 +183,7 @@ class _HomeAppState extends State<HomeApp> {
             ),
           ),
         )
+     )
     );
   }
 }
