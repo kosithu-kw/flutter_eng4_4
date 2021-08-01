@@ -13,14 +13,14 @@ import 'package:http/http.dart' as http;
 import 'home.dart';
 
 
-class SearchApp extends StatefulWidget {
-  const SearchApp({Key? key}) : super(key: key);
+class Searchwf extends StatefulWidget {
+  const Searchwf({Key? key}) : super(key: key);
 
   @override
-  _SearchAppState createState() => _SearchAppState();
+  _SearchwfState createState() => _SearchwfState();
 }
 
-class _SearchAppState extends State<SearchApp> {
+class _SearchwfState extends State<Searchwf> {
   @override
 
   String InterstitialId="";
@@ -96,15 +96,15 @@ class _SearchAppState extends State<SearchApp> {
 
 
   Future<List<Word>> _getALlWord(String text) async {
-    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/list.json");
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/wordform.json");
     var file=await result.readAsString();
     var jsonData=jsonDecode(file);
 
     List<Word> words = [];
 
     for (var w in jsonData) {
-      if(w['eng'].toLowerCase().contains(text.toLowerCase()) || w['mm'].toLowerCase().contains(text.toLowerCase())){
-        words.add(Word(w['eng'], w['mm']));
+      if(w['eng_v1'].toLowerCase().contains(text.toLowerCase()) || w['eng_v2'].toLowerCase().contains(text.toLowerCase()) || w['eng_v3'].toLowerCase().contains(text.toLowerCase()) || w['eng_ving'].toLowerCase().contains(text.toLowerCase()) || w['mm'].toLowerCase().contains(text.toLowerCase())){
+        words.add(Word(w['eng_v1'], w['eng_v2'], w['eng_v3'], w['eng_ving'], w['mm']));
       }
 
     }
@@ -125,7 +125,7 @@ class _SearchAppState extends State<SearchApp> {
     super.dispose();
   }
 
-  final String _title="SPELLINGS";
+  final String _title="VERB FORM";
   final String _subTitle="English - မြန်မာ နှစ်ဘာသာဖြင့်ရှာနိုင်သည်";
 
 
@@ -182,22 +182,54 @@ class _SearchAppState extends State<SearchApp> {
                     return Container(
                         child: Card(
                           child: ListTile(
-                            title: Row(
+                            title: Column(
                               children: [
                                 Container(
-                                  padding: EdgeInsets.only(right: 10),
-                                  child: Icon(Icons.library_books_sharp, size: 16,),
+                                  child: Text("${word.mm}", style: TextStyle(fontWeight: FontWeight.bold),),
                                 ),
-                                Container(
-                                  padding: EdgeInsets.only(right: 10),
-                                  child: Text("${word.eng}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
-                                ),
-                                Container(
-                                  child: Text("${word.mm}"),
+                                SizedBox(height: 10,),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      // padding: EdgeInsets.only(right: 10),
+                                        child: Column(
+                                          children: [
+                                            Text("V1", style: TextStyle(fontSize: 12),),
+                                            Text("${word.eng_v1}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),),
+                                          ],
+                                        )
+
+                                    ),
+                                    Container(
+                                        child: Column(
+                                          children: [
+                                            Text("V2", style: TextStyle(fontSize: 12),),
+                                            Text("${word.eng_v2}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),),
+                                          ],
+                                        )
+                                    ),
+                                    Container(
+                                        child: Column(
+                                          children: [
+                                            Text("V3", style: TextStyle(fontSize: 12),),
+                                            Text("${word.eng_v3}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
+                                          ],
+                                        )
+                                    ),
+                                    Container(
+                                        child: Column(
+                                          children: [
+                                            Text("V ing", style: TextStyle(fontSize: 12),),
+                                            Text("${word.eng_ving}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),),
+                                          ],
+                                        )
+                                    )
+                                  ],
                                 )
                               ],
                             ),
-                          ),
+                          )
                         )
                     );
                   },
@@ -212,6 +244,6 @@ class _SearchAppState extends State<SearchApp> {
 }
 
 class Word {
-  String eng, mm;
-  Word(this.eng, this.mm);
+  String eng_v1, eng_v2, eng_v3, eng_ving, mm;
+  Word(this.eng_v1, this.eng_v2, this.eng_v3, this.eng_ving, this.mm);
 }

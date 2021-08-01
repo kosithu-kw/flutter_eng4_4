@@ -2,13 +2,14 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 import 'package:eng_for_you/readme.dart';
-import 'package:eng_for_you/search.dart';
+import 'package:eng_for_you/spelling.dart';
+import 'package:eng_for_you/wordform.dart';
 import 'package:flutter/material.dart';
-import 'package:share/share.dart';
-import 'search.dart';
-import 'error.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import 'package:page_transition/page_transition.dart';
+import 'package:http/http.dart' as http;
 
 
 void main(){
@@ -26,28 +27,77 @@ class _HomeAppState extends State<HomeApp> {
   final String _title="Eng 4 U";
   final String _subTitle="သင့်အတွက်အင်္ဂလိပ်စာ";
 
-  _fetchData() async{
-    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/list.json");
-    var file=await result.readAsString();
-    var jsonData=jsonDecode(file);
-    return jsonData;
-  }
+  String bannerID="";
+  bool showBanner=false;
 
-  bool _isUpdate=false;
+  _getAdId() async{
+    var result=await http.get(Uri.https("raw.githubusercontent.com", "kosithu-kw/eng4u_data/master/ads.json"));
+    var jsonData=await jsonDecode(result.body);
+    //print(jsonData['int']);
 
-  _updateData() async{
-    await DefaultCacheManager().emptyCache().then((value){
+    if(jsonData['showBanner']=="true"){
+      // print(jsonData['testInter']);
       setState(() {
-        _isUpdate=true;
+        bannerID=jsonData['banner'];
+        showBanner=true;
+      });
+     _callBanner();
 
+    }else{
+      setState(() {
+        showBanner=false;
       });
-      Timer(Duration(seconds: 3), () {
-        setState(() {
-          _isUpdate=false;
-        });
-      });
-    });
+    }
+
   }
+
+
+
+  // TODO: Add _bannerAd
+  late BannerAd _bannerAd;
+
+  // TODO: Add _isBannerAdReady
+  bool _isBannerAdReady = false;
+
+  _callBanner(){
+    // TODO: Initialize _bannerAd
+    _bannerAd = BannerAd(
+      adUnitId: bannerID,
+      request: AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          print('Failed to load a banner ad: ${err.message}');
+          _isBannerAdReady = false;
+          ad.dispose();
+        },
+      ),
+    );
+
+    _bannerAd.load();
+  }
+
+
+ @override
+  void initState() {
+    _getAdId();
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _bannerAd.dispose();
+    super.dispose();
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -65,19 +115,7 @@ class _HomeAppState extends State<HomeApp> {
               child: Text(_subTitle, style: TextStyle( color: Colors.white70),),
               preferredSize: Size.fromHeight(20),
             ),
-            actions: [
-              IconButton(onPressed: (){
-                _updateData();
-              },
-                icon: Icon(Icons.cloud_download),
-              ),
-              IconButton(
-                  onPressed: (){
-                    Navigator.push(context, PageTransition(type: PageTransitionType.leftToRight, child: SearchApp()));
-                    },
-                  icon: Icon(Icons.search_outlined)
-              )
-            ],
+
           ),
           drawer: Drawer(
             child: ListView(
@@ -108,82 +146,266 @@ class _HomeAppState extends State<HomeApp> {
               ],
             ),
           ),
-          body: Container(
-            child: FutureBuilder(
-              future: _isUpdate ? _fetchData() : _fetchData(),
-              builder: (context, AsyncSnapshot s){
+          body: SafeArea(
+            child: Stack(
+              children: [
 
-                if(_isUpdate)
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                _isBannerAdReady ? WithAds() : WithoutAds(),
 
-                      children: [
-                        Container(
-                          padding: EdgeInsets.only(left: 120, right: 120),
-                          child: LinearProgressIndicator(),
-                        ),
-                        Container(
-                          padding: EdgeInsets.only(top: 20),
-                          child: Text("Updating data from server..."),
-                        )
-                      ],
+                if (_isBannerAdReady)
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      width: _bannerAd.size.width.toDouble(),
+                      height: _bannerAd.size.height.toDouble(),
+                      child: AdWidget(ad: _bannerAd),
                     ),
-                  );
-
-
-                if(s.hasData){
-
-                  return ListView.builder(
-                      itemCount: s.data.length,
-                      itemBuilder: (context, i){
-                        return Card(
-                          child: ListTile(
-                            title: Row(
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.only(right: 10),
-                                  child: Icon(Icons.library_books_sharp, size: 16,),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.only(right: 10),
-                                  child: Text("${s.data[i]['eng']}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
-                                ),
-                                Container(
-                                  child: Text("${s.data[i]['mm']}"),
-                                )
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-                  );
-
-                }else if(s.hasError){
-                  return Center(
-                      child: IconButton(
-                        onPressed: (){
-                          Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (BuildContext context) => new ErrorApp()));
-                        },
-                        icon: Icon(Icons.refresh_outlined),
-                      )
-                  );
-                }else{
-                  return Container(
-                    padding: EdgeInsets.only(left: 100, right: 100),
-                    child: Center(
-                      child: LinearProgressIndicator(),
-                    ),
-                  );
-                }
-              },
+                  ),
+              ],
             ),
-          ),
+          )
         )
      )
+    );
+  }
+}
+
+class WithAds extends StatefulWidget {
+  const WithAds({Key? key}) : super(key: key);
+
+  @override
+  _WithAdsState createState() => _WithAdsState();
+}
+
+class _WithAdsState extends State<WithAds> {
+
+  int _spelling=0;
+  int _verbform=0;
+
+  _fetchSpelling() async{
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/list.json");
+    var file=await result.readAsString();
+    var j=jsonDecode(file);
+    setState(() {
+      _spelling=j.length;
+    });
+  }
+  _fetchVerbform() async{
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/wordform.json");
+    var file=await result.readAsString();
+    var j=jsonDecode(file);
+    setState(() {
+      _verbform=j.length;
+    });
+  }
+
+  @override
+  void initState() {
+    _fetchVerbform();
+    _fetchSpelling();
+    // TODO: implement initState
+    super.initState();
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        decoration:BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              width: 70,
+                color: Colors.white70
+            )
+          )
+        ),
+        child: Column(
+          children: [
+            Container(
+                padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 10),
+                child: InkWell(
+                  onTap: (){
+                    Navigator.pushReplacement(context, PageTransition(child: Spelling(), type: PageTransitionType.rightToLeft));
+                  },
+                  child: Card(
+                    child: Center(
+                        child: Row(
+                          children: [
+                            SizedBox(width: 40,),
+                            Container(
+                              padding: EdgeInsets.all(20),
+                              child: Icon(Icons.spellcheck, size: 40,),
+                            ),
+
+                            Container(
+                              padding: EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  Text("SPELLINGS", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
+                                  SizedBox(height: 20,),
+                                  Text("English - မြန်မာ"),
+                                  Text("စာလုံးရေ - ${_spelling}", style: TextStyle(color: Colors.grey),)
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                    ),
+                  ),
+                )
+            ),
+            Container(
+                padding: EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 20),
+                child: InkWell(
+                  onTap: (){
+                    Navigator.pushReplacement(context, PageTransition(child: Wordform(), type: PageTransitionType.rightToLeft));
+                  },
+                  child: Card(
+                    child: Center(
+                        child: Row(
+                          children: [
+                            SizedBox(width: 40,),
+                            Container(
+                              padding: EdgeInsets.all(20),
+                              child: Icon(Icons.library_add_check_outlined, size: 40,),
+                            ),
+
+                            Container(
+                              padding: EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  Text("VERB FORM", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
+                                  SizedBox(height: 20,),
+                                  Text("English - မြန်မာ"),
+                                  Text("စာလုံးရေ - ${_verbform}", style: TextStyle(color: Colors.grey),)
+
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                    ),
+                  ),
+                )
+            ),
+          ],
+
+        )
+    );
+  }
+}
+
+class WithoutAds extends StatefulWidget {
+  const WithoutAds({Key? key}) : super(key: key);
+
+  @override
+  _WithoutAdsState createState() => _WithoutAdsState();
+}
+
+class _WithoutAdsState extends State<WithoutAds> {
+
+  int _spelling=0;
+  int _verbform=0;
+
+  _fetchSpelling() async{
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/list.json");
+    var file=await result.readAsString();
+    var j=jsonDecode(file);
+    setState(() {
+      _spelling=j.length;
+    });
+  }
+  _fetchVerbform() async{
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/wordform.json");
+    var file=await result.readAsString();
+    var j=jsonDecode(file);
+    setState(() {
+      _verbform=j.length;
+    });
+  }
+
+  @override
+  void initState() {
+    _fetchVerbform();
+    _fetchSpelling();
+    // TODO: implement initState
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        child: Column(
+          children: [
+            Container(
+                padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 10),
+                child: InkWell(
+                  onTap: (){
+                    Navigator.pushReplacement(context, PageTransition(child: Spelling(), type: PageTransitionType.rightToLeft));
+                  },
+                  child: Card(
+                    child: Center(
+                        child: Row(
+                          children: [
+                            SizedBox(width: 40,),
+                            Container(
+                              padding: EdgeInsets.all(20),
+                              child: Icon(Icons.spellcheck, size: 40,),
+                            ),
+
+                            Container(
+                              padding: EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  Text("SPELLINGS", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
+                                  SizedBox(height: 20,),
+                                  Text("English - မြန်မာ"),
+                                  Text("စာလုံးရေ - ${_spelling}", style: TextStyle(color: Colors.grey),)
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                    ),
+                  ),
+                )
+            ),
+            Container(
+                padding: EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 20),
+                child: InkWell(
+                  onTap: (){
+                    Navigator.pushReplacement(context, PageTransition(child: Wordform(), type: PageTransitionType.rightToLeft));
+                  },
+                  child: Card(
+                    child: Center(
+                        child: Row(
+                          children: [
+                            SizedBox(width: 40,),
+                            Container(
+                              padding: EdgeInsets.all(20),
+                              child: Icon(Icons.library_add_check_outlined, size: 40,),
+                            ),
+
+                            Container(
+                              padding: EdgeInsets.all(20),
+                              child: Column(
+                                children: [
+                                  Text("VERB FORM", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
+                                  SizedBox(height: 20,),
+                                  Text("English - မြန်မာ"),
+                                  Text("စာလုံးရေ - ${_verbform}", style: TextStyle(color: Colors.grey),)
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                    ),
+                  ),
+                )
+            ),
+          ],
+
+        )
     );
   }
 }
