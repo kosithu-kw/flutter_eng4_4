@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:eng_for_you/ad_helper.dart';
 import 'package:flappy_search_bar/flappy_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'error.dart';
@@ -23,6 +24,7 @@ class SearchApp extends StatefulWidget {
 class _SearchAppState extends State<SearchApp> {
   @override
 
+  /*
   String InterstitialId="";
   bool showInter=false;
 
@@ -49,6 +51,8 @@ class _SearchAppState extends State<SearchApp> {
 
   }
 
+   */
+
 
   // TODO: Add _interstitialAd
   InterstitialAd? _interstitialAd;
@@ -59,7 +63,7 @@ class _SearchAppState extends State<SearchApp> {
   // TODO: Implement _loadInterstitialAd()
   void _loadInterstitialAd() {
     InterstitialAd.load(
-      adUnitId: InterstitialId,
+      adUnitId: AdHelper.interstitialAdUnitId,
       request: AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
@@ -113,7 +117,9 @@ class _SearchAppState extends State<SearchApp> {
 
   @override
   void initState() {
-    _getAdId();
+    if(!_isInterstitialAdReady){
+      _loadInterstitialAd();
+    }
     // TODO: implement initState
 
   }
@@ -152,7 +158,7 @@ class _SearchAppState extends State<SearchApp> {
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: (){
-                if(showInter && _isInterstitialAdReady){
+                if(_isInterstitialAdReady){
                   _interstitialAd?.show();
                 }else{
                   Navigator.push(context, PageTransition(type: PageTransitionType.rightToLeft, child: HomeApp()));

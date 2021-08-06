@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
+import 'package:eng_for_you/ad_helper.dart';
+import 'package:eng_for_you/eve.dart';
 import 'package:eng_for_you/readme.dart';
 import 'package:eng_for_you/spelling.dart';
 import 'package:eng_for_you/wordform.dart';
@@ -27,9 +29,9 @@ class _HomeAppState extends State<HomeApp> {
   final String _title="Eng 4 U";
   final String _subTitle="သင့်အတွက်အင်္ဂလိပ်စာ";
 
+  /*
   String bannerID="";
   bool showBanner=false;
-
   _getAdId() async{
     var result=await http.get(Uri.https("raw.githubusercontent.com", "kosithu-kw/eng4u_data/master/ads.json"));
     var jsonData=await jsonDecode(result.body);
@@ -48,8 +50,8 @@ class _HomeAppState extends State<HomeApp> {
         showBanner=false;
       });
     }
-
-  }
+}
+   */
 
 
 
@@ -62,7 +64,7 @@ class _HomeAppState extends State<HomeApp> {
   _callBanner(){
     // TODO: Initialize _bannerAd
     _bannerAd = BannerAd(
-      adUnitId: bannerID,
+      adUnitId: AdHelper.bannerAdUnitId,
       request: AdRequest(),
       size: AdSize.banner,
       listener: BannerAdListener(
@@ -82,10 +84,44 @@ class _HomeAppState extends State<HomeApp> {
     _bannerAd.load();
   }
 
+  int _spelling=0;
+  int _verbform=0;
+  int _eve=0;
+
+  _fetchSpelling() async{
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/list.json");
+    var file=await result.readAsString();
+    var j=jsonDecode(file);
+    setState(() {
+      _spelling=j.length;
+    });
+  }
+  _fetchVerbform() async{
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/wordform.json");
+    var file=await result.readAsString();
+    var j=jsonDecode(file);
+    setState(() {
+      _verbform=j.length;
+    });
+  }
+  _fetchEve() async{
+    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/eve.json");
+    var file=await result.readAsString();
+    var j=jsonDecode(file);
+    setState(() {
+      _eve=j.length;
+    });
+  }
 
  @override
   void initState() {
-    _getAdId();
+
+    if(!_isBannerAdReady){
+      _callBanner();
+    }
+    _fetchSpelling();
+    _fetchVerbform();
+    _fetchEve();
 
     super.initState();
   }
@@ -150,7 +186,125 @@ class _HomeAppState extends State<HomeApp> {
             child: Stack(
               children: [
 
-                _isBannerAdReady ? WithAds() : WithoutAds(),
+                Container(
+                    decoration: _isBannerAdReady ? BoxDecoration(
+                        border: Border(
+                            bottom: BorderSide(
+                                width: 70,
+                                color: Colors.white70
+                            )
+                        )
+                    ): null,
+                  child: ListView(
+                    children: [
+                      Container(
+                          padding: EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 5),
+                          child: InkWell(
+                            onTap: (){
+                              Navigator.pushReplacement(context, PageTransition(child: Spelling(), type: PageTransitionType.rightToLeft));
+                            },
+                            child: Card(
+                              child: Center(
+                                  child: Row(
+                                    children: [
+                                      SizedBox(width: 20,),
+                                      Container(
+                                        padding: EdgeInsets.all(20),
+                                        child: Icon(Icons.spellcheck, size: 40,),
+                                      ),
+
+                                      Container(
+                                        padding: EdgeInsets.all(20),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text("SPELLINGS", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
+                                            SizedBox(height: 10,),
+                                            Text("English - မြန်မာ"),
+                                            Text("စာလုံးရေ - ${_spelling}", style: TextStyle(color: Colors.grey),)
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                              ),
+                            ),
+                          )
+                      ),
+                      Container(
+                          padding: EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 5),
+                          child: InkWell(
+                            onTap: (){
+                              Navigator.pushReplacement(context, PageTransition(child: Wordform(), type: PageTransitionType.rightToLeft));
+                            },
+                            child: Card(
+                              child: Center(
+                                  child: Row(
+                                    children: [
+                                      SizedBox(width: 20,),
+                                      Container(
+                                        padding: EdgeInsets.all(20),
+                                        child: Icon(Icons.library_add_check_outlined, size: 40,),
+                                      ),
+
+                                      Container(
+                                        padding: EdgeInsets.all(20),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text("VERB FORM", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
+                                            SizedBox(height: 10,),
+                                            Text("English - မြန်မာ"),
+                                            Text("စာလုံးရေ - ${_verbform}", style: TextStyle(color: Colors.grey),)
+
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                              ),
+                            ),
+                          )
+                      ),
+                      Container(
+                          padding: EdgeInsets.only(left: 20, right: 20, top: 5, bottom: 5),
+                          child: InkWell(
+                            onTap: (){
+                              Navigator.pushReplacement(context, PageTransition(child: Eve(), type: PageTransitionType.rightToLeft));
+                            },
+                            child: Card(
+                              child: Center(
+                                  child: Row(
+                                    children: [
+                                      SizedBox(width: 20,),
+                                      Container(
+                                        padding: EdgeInsets.all(20),
+                                        child: Icon(Icons.supervisor_account, size: 40,),
+                                      ),
+
+                                      Container(
+                                        padding: EdgeInsets.all(20),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text("English For Everyday", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
+                                            SizedBox(height: 10,),
+                                            Text("နေ့စဉ်သုံးအင်္ဂလိပ်စကား"),
+                                            Text("စာလုံးရေ - ${_eve}", style: TextStyle(color: Colors.grey),)
+
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                              ),
+                            ),
+                          )
+                      ),
+
+                    ],
+                  ),
+                ),
 
                 if (_isBannerAdReady)
                   Align(
@@ -166,246 +320,6 @@ class _HomeAppState extends State<HomeApp> {
           )
         )
      )
-    );
-  }
-}
-
-class WithAds extends StatefulWidget {
-  const WithAds({Key? key}) : super(key: key);
-
-  @override
-  _WithAdsState createState() => _WithAdsState();
-}
-
-class _WithAdsState extends State<WithAds> {
-
-  int _spelling=0;
-  int _verbform=0;
-
-  _fetchSpelling() async{
-    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/list.json");
-    var file=await result.readAsString();
-    var j=jsonDecode(file);
-    setState(() {
-      _spelling=j.length;
-    });
-  }
-  _fetchVerbform() async{
-    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/wordform.json");
-    var file=await result.readAsString();
-    var j=jsonDecode(file);
-    setState(() {
-      _verbform=j.length;
-    });
-  }
-
-  @override
-  void initState() {
-    _fetchVerbform();
-    _fetchSpelling();
-    // TODO: implement initState
-    super.initState();
-  }
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        decoration:BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              width: 70,
-                color: Colors.white70
-            )
-          )
-        ),
-        child: Column(
-          children: [
-            Container(
-                padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 10),
-                child: InkWell(
-                  onTap: (){
-                    Navigator.pushReplacement(context, PageTransition(child: Spelling(), type: PageTransitionType.rightToLeft));
-                  },
-                  child: Card(
-                    child: Center(
-                        child: Row(
-                          children: [
-                            SizedBox(width: 40,),
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              child: Icon(Icons.spellcheck, size: 40,),
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  Text("SPELLINGS", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
-                                  SizedBox(height: 20,),
-                                  Text("English - မြန်မာ"),
-                                  Text("စာလုံးရေ - ${_spelling}", style: TextStyle(color: Colors.grey),)
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                    ),
-                  ),
-                )
-            ),
-            Container(
-                padding: EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 20),
-                child: InkWell(
-                  onTap: (){
-                    Navigator.pushReplacement(context, PageTransition(child: Wordform(), type: PageTransitionType.rightToLeft));
-                  },
-                  child: Card(
-                    child: Center(
-                        child: Row(
-                          children: [
-                            SizedBox(width: 40,),
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              child: Icon(Icons.library_add_check_outlined, size: 40,),
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  Text("VERB FORM", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
-                                  SizedBox(height: 20,),
-                                  Text("English - မြန်မာ"),
-                                  Text("စာလုံးရေ - ${_verbform}", style: TextStyle(color: Colors.grey),)
-
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                    ),
-                  ),
-                )
-            ),
-          ],
-
-        )
-    );
-  }
-}
-
-class WithoutAds extends StatefulWidget {
-  const WithoutAds({Key? key}) : super(key: key);
-
-  @override
-  _WithoutAdsState createState() => _WithoutAdsState();
-}
-
-class _WithoutAdsState extends State<WithoutAds> {
-
-  int _spelling=0;
-  int _verbform=0;
-
-  _fetchSpelling() async{
-    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/list.json");
-    var file=await result.readAsString();
-    var j=jsonDecode(file);
-    setState(() {
-      _spelling=j.length;
-    });
-  }
-  _fetchVerbform() async{
-    var result=await DefaultCacheManager().getSingleFile("https://raw.githubusercontent.com/kosithu-kw/eng4u_data/master/wordform.json");
-    var file=await result.readAsString();
-    var j=jsonDecode(file);
-    setState(() {
-      _verbform=j.length;
-    });
-  }
-
-  @override
-  void initState() {
-    _fetchVerbform();
-    _fetchSpelling();
-    // TODO: implement initState
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-        child: Column(
-          children: [
-            Container(
-                padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 10),
-                child: InkWell(
-                  onTap: (){
-                    Navigator.pushReplacement(context, PageTransition(child: Spelling(), type: PageTransitionType.rightToLeft));
-                  },
-                  child: Card(
-                    child: Center(
-                        child: Row(
-                          children: [
-                            SizedBox(width: 40,),
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              child: Icon(Icons.spellcheck, size: 40,),
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  Text("SPELLINGS", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
-                                  SizedBox(height: 20,),
-                                  Text("English - မြန်မာ"),
-                                  Text("စာလုံးရေ - ${_spelling}", style: TextStyle(color: Colors.grey),)
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                    ),
-                  ),
-                )
-            ),
-            Container(
-                padding: EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 20),
-                child: InkWell(
-                  onTap: (){
-                    Navigator.pushReplacement(context, PageTransition(child: Wordform(), type: PageTransitionType.rightToLeft));
-                  },
-                  child: Card(
-                    child: Center(
-                        child: Row(
-                          children: [
-                            SizedBox(width: 40,),
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              child: Icon(Icons.library_add_check_outlined, size: 40,),
-                            ),
-
-                            Container(
-                              padding: EdgeInsets.all(20),
-                              child: Column(
-                                children: [
-                                  Text("VERB FORM", style: TextStyle(color: Colors.amber[800], fontWeight: FontWeight.bold, fontSize: 18),),
-                                  SizedBox(height: 20,),
-                                  Text("English - မြန်မာ"),
-                                  Text("စာလုံးရေ - ${_verbform}", style: TextStyle(color: Colors.grey),)
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                    ),
-                  ),
-                )
-            ),
-          ],
-
-        )
     );
   }
 }
