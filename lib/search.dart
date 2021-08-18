@@ -188,15 +188,12 @@ class _SearchAppState extends State<SearchApp> {
                     return Container(
                         child: Card(
                           child: ListTile(
-                            title: Row(
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Container(
                                   padding: EdgeInsets.only(right: 10),
-                                  child: Icon(Icons.library_books_sharp, size: 16,),
-                                ),
-                                Container(
-                                  padding: EdgeInsets.only(right: 10),
-                                  child: Text("${word.eng}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
+                                  child: Text("${word.eng}", textAlign: TextAlign.justify, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
                                 ),
                                 Container(
                                   child: Text("${word.mm}"),

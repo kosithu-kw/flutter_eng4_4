@@ -7,7 +7,9 @@ import 'package:eng_for_you/search.dart';
 import 'package:eng_for_you/search_eve.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'ad_helper.dart';
 import 'search.dart';
 import 'error.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
@@ -48,12 +50,49 @@ class _EveState extends State<Eve> {
     });
   }
 
+  // TODO: Add _bannerAd
+  late BannerAd _bannerAd;
+
+  // TODO: Add _isBannerAdReady
+  bool _isBannerAdReady = false;
+
+  _callBanner(){
+    // TODO: Initialize _bannerAd
+    _bannerAd = BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      request: AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          setState(() {
+            _isBannerAdReady = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          print('Failed to load a banner ad: ${err.message}');
+          _isBannerAdReady = false;
+          ad.dispose();
+        },
+      ),
+    );
+
+    _bannerAd.load();
+  }
+
   @override
   void initState() {
 
-
-
+    if(!_isBannerAdReady){
+      _callBanner();
+    }
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _bannerAd.dispose();
+    // TODO: implement dispose
+    super.dispose();
   }
 
 
@@ -68,10 +107,12 @@ class _EveState extends State<Eve> {
             title: _title,
             home: Scaffold(
               appBar: AppBar(
-                leading: IconButton(onPressed: (){
-                  _updateData();
-                },
-                  icon: Icon(Icons.cloud_download),
+                leading: IconButton(
+                  icon:Icon(Icons.arrow_back),
+                  onPressed: (){
+                    Navigator.push(context, PageTransition(type: PageTransitionType.rightToLeft, child: HomeApp()));
+
+                  },
                 ),
                 centerTitle: true,
                 title: Column(
@@ -90,7 +131,12 @@ class _EveState extends State<Eve> {
                         Navigator.push(context, PageTransition(type: PageTransitionType.leftToRight, child: SearchEve()));
                       },
                       icon: Icon(Icons.search_outlined)
-                  )
+                  ),
+                  IconButton(onPressed: (){
+                    _updateData();
+                  },
+                    icon: Icon(Icons.cloud_download),
+                  ),
                 ],
               ),
               /*
@@ -123,8 +169,6 @@ class _EveState extends State<Eve> {
                   ],
                 ),
               ),
-
-               */
               floatingActionButton: FloatingActionButton(
                 onPressed: (){
                   Navigator.push(context, PageTransition(type: PageTransitionType.rightToLeft, child: HomeApp()));
@@ -132,81 +176,108 @@ class _EveState extends State<Eve> {
                 },
                 child: Icon(Icons.home),
               ),
-              body: Container(
-                child: FutureBuilder(
-                  future: _isUpdate ? _fetchData() : _fetchData(),
-                  builder: (context, AsyncSnapshot s){
 
-                    if(_isUpdate)
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-
-                          children: [
-                            Container(
-                              padding: EdgeInsets.only(left: 120, right: 120),
-                              child: LinearProgressIndicator(),
-                            ),
-                            Container(
-                              padding: EdgeInsets.only(top: 20),
-                              child: Text("Updating data from server..."),
+               */
+              body: SafeArea(
+                child: Stack(
+                  children: [
+                Container(
+                    decoration: BoxDecoration(
+                        border: Border(
+                            bottom: BorderSide(
+                                width: 60,
+                                color: Colors.white70
                             )
-                          ],
-                        ),
-                      );
+                        )
+                    ),
+                child: FutureBuilder(
+                future: _isUpdate ? _fetchData() : _fetchData(),
+              builder: (context, AsyncSnapshot s){
 
+                if(_isUpdate)
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
 
-                    if(s.hasData){
-
-                      return ListView.builder(
-                          itemCount: s.data.length,
-                          itemBuilder: (context, i){
-                            return Card(
-                              child: ListTile(
-                                title: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.only(right: 10),
-                                          child: Text("${s.data[i]['eng']}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
-                                        ),
-                                        Container(
-                                          child: Text("${s.data[i]['mm']}"),
-                                        )
-                                      ],
-                                    )
-
-                                )
-                              );
-
-                          }
-                      );
-
-                    }else if(s.hasError){
-                      return Center(
-                          child: IconButton(
-                            onPressed: (){
-                              Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (BuildContext context) => new ErrorApp()));
-                            },
-                            icon: Icon(Icons.refresh_outlined),
-                          )
-                      );
-                    }else{
-                      return Container(
-                        padding: EdgeInsets.only(left: 100, right: 100),
-                        child: Center(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.only(left: 120, right: 120),
                           child: LinearProgressIndicator(),
                         ),
-                      );
-                    }
-                  },
+                        Container(
+                          padding: EdgeInsets.only(top: 20),
+                          child: Text("Updating data from server..."),
+                        )
+                      ],
+                    ),
+                  );
+
+
+                if(s.hasData){
+
+                  return ListView.builder(
+                      itemCount: s.data.length,
+                      itemBuilder: (context, i){
+                        return Card(
+                            child: ListTile(
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.only(right: 10),
+                                      child: Text("${s.data[i]['eng']}", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),),
+                                    ),
+                                    Container(
+                                      child: Text("${s.data[i]['mm']}"),
+                                    )
+                                  ],
+                                )
+
+                            )
+                        );
+
+                      }
+                  );
+
+                }else if(s.hasError){
+                  return Center(
+                      child: IconButton(
+                        onPressed: (){
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (BuildContext context) => new ErrorApp()));
+                        },
+                        icon: Icon(Icons.refresh_outlined),
+                      )
+                  );
+                }else{
+                  return Container(
+                    padding: EdgeInsets.only(left: 100, right: 100),
+                    child: Center(
+                      child: LinearProgressIndicator(),
+                    ),
+                  );
+                }
+              },
+              )
                 ),
-              ),
+                    if (_isBannerAdReady)
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          width: _bannerAd.size.width.toDouble(),
+                          height: _bannerAd.size.height.toDouble(),
+                          child: AdWidget(ad: _bannerAd),
+                        ),
+                      ),
+
+                  ],
+                ),
+
             )
         )
+      )
     );
   }
 }

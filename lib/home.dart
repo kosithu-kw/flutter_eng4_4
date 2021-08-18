@@ -117,7 +117,7 @@ class _HomeAppState extends State<HomeApp> {
   void initState() {
 
     if(!_isBannerAdReady){
-      _callBanner();
+      //_callBanner();
     }
     _fetchSpelling();
     _fetchVerbform();
@@ -187,14 +187,17 @@ class _HomeAppState extends State<HomeApp> {
               children: [
 
                 Container(
+                  /*
                     decoration: _isBannerAdReady ? BoxDecoration(
                         border: Border(
                             bottom: BorderSide(
-                                width: 70,
+                                width: 55,
                                 color: Colors.white70
                             )
                         )
                     ): null,
+
+                   */
                   child: ListView(
                     children: [
                       Container(
